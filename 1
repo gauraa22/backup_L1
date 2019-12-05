@@ -1,0 +1,38 @@
+Logoff iscsi sessions and delete nodes:
+
+# for each in $(iscsiadm -m node | awk '{print $NF}' | xargs); do iscsiadm -m node -T $each -u; sleep 1; done
+# iscsiadm –m session
+# for each in $(iscsiadm -m node | awk '{print $NF}' | xargs); do iscsiadm -m node -T $each -o delete; sleep 1; done
+# iscsiadm -m node
+
+Reboot OS:
+
+Logon to iSCSI
+
+# for each in $(iscsiadm -m discovery -t st -p 10.111.13.148 | awk '{print $NF}' | xargs); do iscsiadm -m node -T $each -l; sleep 1; done
+
+Configure multipathd:
+
+# cat /etc/multipath.conf
+defaults {
+        udev_dir                /dev
+        polling_interval        10
+        path_selector           "round-robin 0"
+        path_grouping_policy    multibus
+        getuid_callout          "/lib/udev/scsi_id --whitelisted --device=/dev/%n"
+        prio                    alua
+        path_checker            readsector0
+        rr_min_io               100
+        max_fds                 8192
+        rr_weight               priorities
+        failback                immediate
+        no_path_retry           fail
+        user_friendly_names     yes
+}
+
+# systemctl stat multipathd
+# multipath -l
+# multipath -ll
+
+You should have multipath devices in /dev/mapper/ directory. Devices will be named as mpatha, mpathb etc…
+Use /dev/mapper/mpatha (example) for filename= parameter in fio.
